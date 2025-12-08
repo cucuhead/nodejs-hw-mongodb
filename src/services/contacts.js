@@ -1,15 +1,30 @@
-import { Contact } from '../db/Contact.js';
+// src/services/contacts.js
+import { Contact } from '../db/Contact.js'; // Modelinizi bu şekilde import ettiğinizi varsayıyorum
 
-// Tüm iletişimleri veritabanından çeken fonksiyon
 export const getAllContacts = async () => {
-  // .find() metodu tüm belgeleri çeker
-  const contacts = await Contact.find();
-  return contacts;
+  return await Contact.find();
 };
 
-// Belirli bir ID ile iletişimi veritabanından çeken fonksiyon (Adım 6)
 export const getContactById = async (contactId) => {
-  // Mongoose'un findById metodu ID'ye göre belgeyi çeker
-  const contact = await Contact.findById(contactId);
-  return contact;
+  return await Contact.findById(contactId);
+};
+
+// Adım 3: Yeni iletişim oluşturma servisi
+export const createContact = async (payload) => {
+  return await Contact.create(payload);
+};
+
+// Adım 4: Mevcut iletişimi güncelleme servisi
+export const updateContact = async (contactId, payload, options = {}) => {
+  // new: true -> güncellenmiş belgeyi döndürür
+  const result = await Contact.findByIdAndUpdate(contactId, payload, {
+    new: true,
+    ...options,
+  });
+  return result;
+};
+
+// Adım 5: Mevcut iletişimi silme servisi
+export const deleteContact = async (contactId) => {
+  return await Contact.findByIdAndDelete(contactId);
 };
