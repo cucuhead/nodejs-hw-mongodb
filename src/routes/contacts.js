@@ -1,31 +1,51 @@
 // src/routes/contacts.js
 import { Router } from 'express';
 import {
-  getAllContactsController,
-  getContactByIdController,
-  createContactController,  // Yeni
-  updateContactController,  // Yeni
-  deleteContactController,  // Yeni
+  getAllContactsController,
+  getContactByIdController,
+  createContactController,
+  updateContactController,
+  deleteContactController,
 } from '../controllers/contacts.js';
+
+import { validateBody } from "../middlewares/validateBody.js";
+import { isValidId } from "../middlewares/isValidId.js";
+import { createContactSchema, updateContactSchema } from "../validation/contacts.js";
 
 const router = Router();
 
-// GET /contacts
-console.log('Contacts router initialized')
+console.log('Contacts router initialized');
+
+// GET /contacts (pagination + sorting burada olacak)
 router.get('/', getAllContactsController);
 
-// POST /contacts (Adım 3)
-router.post('/', createContactController);
+// POST /contacts → VALIDATION EKLENMİŞ HALİ
+router.post(
+  '/',
+  validateBody(createContactSchema),
+  createContactController
+);
 
-// GET /contacts/:contactId
-router.get('/:contactId', getContactByIdController);
+// GET /contacts/:contactId → ID VALIDATION EKLENDİ
+router.get(
+  '/:contactId',
+  isValidId,
+  getContactByIdController
+);
 
-// PATCH /contacts/:contactId (Adım 4)
-router.patch('/:contactId', updateContactController);
+// PATCH /contacts/:contactId → ID + BODY VALIDATION
+router.patch(
+  '/:contactId',
+  isValidId,
+  validateBody(updateContactSchema),
+  updateContactController
+);
 
-// DELETE /contacts/:contactId (Adım 5)
-router.delete('/:contactId', deleteContactController);
-
-
+// DELETE /contacts/:contactId → ID VALIDATION
+router.delete(
+  '/:contactId',
+  isValidId,
+  deleteContactController
+);
 
 export const contactsRouter = router;

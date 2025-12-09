@@ -11,13 +11,46 @@ import {
 
 // Tüm kişileri dönen controller
 export const getAllContactsController = ctrlWrapper(async (req, res) => {
-  const contacts = await getAllContacts();
+  let { page = 1, perPage = 10, sortBy = "name", sortOrder = "asc", type, isFavourite } = req.query;
 
-  res.json({
-    status: 200,
-    message: 'Successfully fetched all contacts',
-    data: contacts,
-  });
+  page = Number(page);
+  perPage = Number(perPage);
+
+  // Filtreler
+  const filter = {};
+
+  if (type) filter.contactType = type;
+  if (isFavourite !== undefined) filter.isFavourite = isFavourite === "true";
+
+  // Sıralama ayarı
+  const sortOptions = {
+    [sortBy]: sortOrder === "desc" ? -1 : 1,
+  };
+
+  // Servis'teki getAllContacts fonksiyonuna yeni parametreler gönderiyoruz
+  const { contacts, totalItems } = await getAllContacts({
+    filter,
+    sortOptions,
+    page,
+    perPage,
+  });
+
+  // Toplam sayfa sayısı
+  const totalPages = Math.ceil(totalItems / perPage);
+
+  res.json({
+    status: 200,
+    message: "Successfully found contacts!",
+    data: {
+      data: contacts,
+      page,
+      perPage,
+      totalItems,
+      totalPages,
+      hasPreviousPage: page > 1,
+      hasNextPage: page < totalPages,
+    },
+  });
 });
 
 // ID ile bir kişi dönen controller
