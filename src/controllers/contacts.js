@@ -1,45 +1,110 @@
-import { getAllContacts, getContactById } from '../services/contacts.js';
+// src/controllers/contacts.js
+import createHttpError from 'http-errors';
+import { ctrlWrapper } from '../utils/ctrlWrapper.js';
+import {
+  getAllContacts,
+  getContactById,
+  createContact,
+  updateContact,
+  deleteContact,
+} from '../services/contacts.js';
 
-// GET /contacts rotasının kontrolcüsü (Adım 5)
-export const getContactsController = async (req, res, next) => {
-  try {
-    const contacts = await getAllContacts();
+// Tüm kişileri dönen controller
+export const getAllContactsController = ctrlWrapper(async (req, res) => {
+  let { page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc', type, isFavourite } = req.query;
 
-    // Ödevde istenen 200 yanıt yapısını döndür
-    res.status(200).json({
-      status: 200,
-      message: 'Successfully found contacts!',
+  page = Number(page);
+  perPage = Number(perPage);
+
+  // Filtreler
+  const filter = {};
+  if (type) filter.contactType = type;
+  if (isFavourite !== undefined) filter.isFavourite = isFavourite === 'true';
+
+  const sortOptions = {
+    [sortBy]: sortOrder === 'desc' ? -1 : 1,
+  };
+
+  // userId filtresi ekle
+  const { contacts, totalItems } = await getAllContacts({
+    userId: req.user._id,
+    filter,
+    sortOptions,
+    page,
+    perPage,
+  });
+
+  const totalPages = Math.ceil(totalItems / perPage);
+
+  res.json({
+    status: 200,
+    message: 'Successfully found contacts!',
+    data: {
       data: contacts,
-    });
-  } catch (err) {
-    // Herhangi bir veritabanı veya sunucu hatasını yakala
-    next(err);
+      page,
+      perPage,
+      totalItems,
+      totalPages,
+      hasPreviousPage: page > 1,
+      hasNextPage: page < totalPages,
+    },
+  });
+});
+
+// ID ile bir kişi dönen controller
+export const getContactByIdController = ctrlWrapper(async (req, res) => {
+  const { contactId } = req.params;
+
+  const contact = await getContactById(contactId, req.user._id);
+
+  if (!contact) {
+    throw createHttpError(404, 'Contact not found');
   }
-};
 
-// GET /contacts/:contactId rotasının kontrolcüsü (Adım 6)
-export const getContactByIdController = async (req, res, next) => {
-  const { contactId } = req.params; // URL'den :contactId parametresini al
+  res.json({
+    status: 200,
+    message: 'Successfully fetched contact',
+    data: contact,
+  });
+});
 
-  try {
-    const contact = await getContactById(contactId);
+// Yeni iletişim oluşturma controller
+export const createContactController = ctrlWrapper(async (req, res) => {
+  const contact = await createContact(req.body, req.user._id);
 
-    if (!contact) {
-      // 5. İletişim bulunamazsa 404 hatası döndür
-      // Not: Bu aşamada, geçersiz MongoDB ID'si kontrolü yapmaya gerek yoktur.
-      return res.status(404).json({
-        message: 'Contact not found',
-      });
-    }
+  res.status(201).json({
+    status: 201,
+    message: 'Successfully created a contact!',
+    data: contact,
+  });
+});
 
-    // 4. İletişim bulunduysa 200 yanıtı döndür
-    res.status(200).json({
-      status: 200,
-      message: `Successfully found contact with id ${contactId}!`,
-      data: contact,
-    });
-  } catch (err) {
-    // Veritabanı veya sunucu hatalarını yakala
-    next(err);
+// Mevcut iletişimi güncelleme controller
+export const updateContactController = ctrlWrapper(async (req, res) => {
+  const { contactId } = req.params;
+
+  const contact = await updateContact(contactId, req.user._id, req.body);
+
+  if (!contact) {
+    throw createHttpError(404, 'Contact not found');
   }
-};
+
+  res.json({
+    status: 200,
+    message: 'Successfully patched a contact!',
+    data: contact,
+  });
+});
+
+// Mevcut iletişimi silme controller
+export const deleteContactController = ctrlWrapper(async (req, res) => {
+  const { contactId } = req.params;
+
+  const contact = await deleteContact(contactId, req.user._id);
+
+  if (!contact) {
+    throw createHttpError(404, 'Contact not found');
+  }
+
+  res.status(204).send();
+});
