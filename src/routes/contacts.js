@@ -8,6 +8,8 @@ import {
   deleteContactController,
 } from '../controllers/contacts.js';
 
+import { authenticate } from '../middlewares/authenticate.js';
+
 import { validateBody } from "../middlewares/validateBody.js";
 import { isValidId } from "../middlewares/isValidId.js";
 import { createContactSchema, updateContactSchema } from "../validation/contacts.js";
@@ -17,11 +19,12 @@ const router = Router();
 console.log('Contacts router initialized');
 
 // GET /contacts (pagination + sorting burada olacak)
-router.get('/', getAllContactsController);
+router.get('/', authenticate, getAllContactsController);
 
 // POST /contacts → VALIDATION EKLENMİŞ HALİ
 router.post(
   '/',
+   authenticate,
   validateBody(createContactSchema),
   createContactController
 );
@@ -29,6 +32,7 @@ router.post(
 // GET /contacts/:contactId → ID VALIDATION EKLENDİ
 router.get(
   '/:contactId',
+   authenticate,
   isValidId,
   getContactByIdController
 );
@@ -36,6 +40,7 @@ router.get(
 // PATCH /contacts/:contactId → ID + BODY VALIDATION
 router.patch(
   '/:contactId',
+   authenticate,
   isValidId,
   validateBody(updateContactSchema),
   updateContactController
@@ -44,6 +49,7 @@ router.patch(
 // DELETE /contacts/:contactId → ID VALIDATION
 router.delete(
   '/:contactId',
+   authenticate,
   isValidId,
   deleteContactController
 );

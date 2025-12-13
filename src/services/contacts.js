@@ -1,37 +1,44 @@
+// src/services/contacts.js
 import { Contact } from '../db/Contact.js';
 
-// ✓ Güncellenmiş getAllContacts (pagination + sort + filter)
-export const getAllContacts = async ({ filter, sortOptions, page, perPage }) => {
+// ✓ getAllContacts (pagination + sort + filter + userId)
+export const getAllContacts = async ({ userId, filter = {}, sortOptions = {}, page = 1, perPage = 10 }) => {
   const skip = (page - 1) * perPage;
 
+  // userId filtresi ekle
+  const finalFilter = { ...filter, userId };
+
   const [contacts, totalItems] = await Promise.all([
-    Contact.find(filter)
+    Contact.find(finalFilter)
       .sort(sortOptions)
       .skip(skip)
       .limit(perPage),
-    Contact.countDocuments(filter),
+    Contact.countDocuments(finalFilter),
   ]);
 
   return { contacts, totalItems };
 };
 
-// ✓ Bunlar aynı şekilde kalıyor
-export const getContactById = async (contactId) => {
-  return await Contact.findById(contactId);
+// ✓ getContactById (userId ile filtrelenmiş)
+export const getContactById = async (contactId, userId) => {
+  return await Contact.findOne({ _id: contactId, userId });
 };
 
-export const createContact = async (payload) => {
-  return await Contact.create(payload);
+// ✓ createContact (userId eklenmiş)
+export const createContact = async (payload, userId) => {
+  return await Contact.create({ ...payload, userId });
 };
 
-export const updateContact = async (contactId, payload, options = {}) => {
-  const result = await Contact.findByIdAndUpdate(contactId, payload, {
-    new: true,
-    ...options,
-  });
-  return result;
+// ✓ updateContact (userId filtresi)
+export const updateContact = async (contactId, userId, payload, options = {}) => {
+  return await Contact.findOneAndUpdate(
+    { _id: contactId, userId },
+    payload,
+    { new: true, ...options }
+  );
 };
 
-export const deleteContact = async (contactId) => {
-  return await Contact.findByIdAndDelete(contactId);
+// ✓ deleteContact (userId filtresi)
+export const deleteContact = async (contactId, userId) => {
+  return await Contact.findOneAndDelete({ _id: contactId, userId });
 };

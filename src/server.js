@@ -5,6 +5,7 @@ import cors from 'cors';
 import pino from 'pino-http';
 import { env } from './utils/env.js';
 import { contactsRouter } from './routes/contacts.js';
+import authRouter from './routes/auth.js'
 import { notFoundHandler } from './middlewares/notFoundHandler.js'; // Adım 2
 import { errorHandler } from './middlewares/errorHandler.js'; // Adım 2
 
@@ -25,13 +26,15 @@ app.use(cors());
     })
   );
 
+app.use('/auth', authRouter);
+
   // 2. Sağlık Kontrolü (Health Check)
   app.get('/', (req, res) => {
     res.json({ message: 'Hello World!' });
   });
 
   // 3. ROTALAR
-console.log('Contacts Router loaded');
+
 
 
   app.use('/contacts', contactsRouter); 
