@@ -32,7 +32,12 @@ const contactSchema = new Schema(
     // createdAt: Date
     // updatedAt: Date
   },
+ 
   {
+     photo: {
+  type: String,
+  default: null,
+},
     // createdAt ve updatedAt alanlarını otomatik olarak ekler
     timestamps: true,
     // Ödeviniz için, koleksiyon adı 'contacts' olarak ayarlanmalıdır.

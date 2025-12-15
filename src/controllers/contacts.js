@@ -8,15 +8,22 @@ import {
   updateContact,
   deleteContact,
 } from '../services/contacts.js';
+import { uploadToCloudinary } from '../utils/uploadToCloudinary.js';
 
-// Tüm kişileri dönen controller
+/* GET ALL */
 export const getAllContactsController = ctrlWrapper(async (req, res) => {
-  let { page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc', type, isFavourite } = req.query;
+  let {
+    page = 1,
+    perPage = 10,
+    sortBy = 'name',
+    sortOrder = 'asc',
+    type,
+    isFavourite,
+  } = req.query;
 
   page = Number(page);
   perPage = Number(perPage);
 
-  // Filtreler
   const filter = {};
   if (type) filter.contactType = type;
   if (isFavourite !== undefined) filter.isFavourite = isFavourite === 'true';
@@ -25,7 +32,6 @@ export const getAllContactsController = ctrlWrapper(async (req, res) => {
     [sortBy]: sortOrder === 'desc' ? -1 : 1,
   };
 
-  // userId filtresi ekle
   const { contacts, totalItems } = await getAllContacts({
     userId: req.user._id,
     filter,
@@ -51,7 +57,7 @@ export const getAllContactsController = ctrlWrapper(async (req, res) => {
   });
 });
 
-// ID ile bir kişi dönen controller
+/* GET BY ID */
 export const getContactByIdController = ctrlWrapper(async (req, res) => {
   const { contactId } = req.params;
 
@@ -68,9 +74,22 @@ export const getContactByIdController = ctrlWrapper(async (req, res) => {
   });
 });
 
-// Yeni iletişim oluşturma controller
+/* CREATE */
 export const createContactController = ctrlWrapper(async (req, res) => {
-  const contact = await createContact(req.body, req.user._id);
+  let photo;
+
+  if (req.file) {
+    const result = await uploadToCloudinary(req.file.buffer);
+    photo = result.secure_url;
+  }
+
+  const contact = await createContact(
+    {
+      ...req.body,
+      ...(photo && { photo }),
+    },
+    req.user._id
+  );
 
   res.status(201).json({
     status: 201,
@@ -79,12 +98,26 @@ export const createContactController = ctrlWrapper(async (req, res) => {
   });
 });
 
-// Mevcut iletişimi güncelleme controller
+/* UPDATE */
 export const updateContactController = ctrlWrapper(async (req, res) => {
+  console.log('update: ', req)
   const { contactId } = req.params;
 
-  const contact = await updateContact(contactId, req.user._id, req.body);
+  let photo;
 
+  if (req.file) {
+    const result = await uploadToCloudinary(req.file.buffer);
+    photo = result.secure_url;
+  }
+
+  const contact = await updateContact(
+   contactId,
+    req.user._id,
+    {
+      ...req.body,
+      ...(photo && { photo }),
+    }
+  );
   if (!contact) {
     throw createHttpError(404, 'Contact not found');
   }
@@ -96,7 +129,7 @@ export const updateContactController = ctrlWrapper(async (req, res) => {
   });
 });
 
-// Mevcut iletişimi silme controller
+/* DELETE */
 export const deleteContactController = ctrlWrapper(async (req, res) => {
   const { contactId } = req.params;
 
