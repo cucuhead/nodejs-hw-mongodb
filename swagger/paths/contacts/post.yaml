@@ -1,0 +1,32 @@
+tags:
+  - Contacts
+
+summary: Create a new contact
+
+operationId: createContact
+
+description: Create a new contact.
+
+security:
+  - bearerAuth: []
+
+requestBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        type: object
+        required:
+          - name
+          - email
+        properties:
+          name:
+            type: string
+          email:
+            type: string
+          phone:
+            type: string
+
+responses:
+  '201':
+    description: Contact created successfully

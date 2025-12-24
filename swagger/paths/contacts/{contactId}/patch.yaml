@@ -1,0 +1,38 @@
+tags:
+  - Contacts
+
+summary: Update contact
+
+operationId: updateContact
+
+description: Update an existing contact.
+
+security:
+  - bearerAuth: []
+
+parameters:
+  - name: contactId
+    in: path
+    required: true
+    schema:
+      type: string
+
+requestBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          name:
+            type: string
+          email:
+            type: string
+          phone:
+            type: string
+
+responses:
+  '200':
+    description: Contact updated successfully
+  '404':
+    description: Contact not found

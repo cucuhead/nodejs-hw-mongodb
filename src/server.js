@@ -8,8 +8,15 @@ import { contactsRouter } from './routes/contacts.js';
 import authRouter from './routes/auth.js'
 import { notFoundHandler } from './middlewares/notFoundHandler.js'; // Adım 2
 import { errorHandler } from './middlewares/errorHandler.js'; // Adım 2
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
 
 const PORT = Number(env('PORT', '3000'));
+
+
+const swaggerDocument = YAML.load(
+  `${process.cwd()}/docs/openapi.yaml`
+);
 
 export const setupServer = () => {
 const app = express();
@@ -17,6 +24,8 @@ const app = express();
   // 1. Standart Middleware'ler
  app.use(express.json());
 app.use(cors());
+
+
 
   app.use(
     pino({
@@ -38,6 +47,12 @@ app.use('/auth', authRouter);
 
 
   app.use('/contacts', contactsRouter); 
+
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument)
+);
 
   // 4. 404 Not Found Handler (Tüm rotalardan sonra)
   // Adım 2.3: Var olmayan yolları yakalar
