@@ -5,64 +5,64 @@ import cors from 'cors';
 import pino from 'pino-http';
 import { env } from './utils/env.js';
 import { contactsRouter } from './routes/contacts.js';
-import authRouter from './routes/auth.js'
-import { notFoundHandler } from './middlewares/notFoundHandler.js'; // Adım 2
-import { errorHandler } from './middlewares/errorHandler.js'; // Adım 2
+import authRouter from './routes/auth.js';
+import { notFoundHandler } from './middlewares/notFoundHandler.js';
+import { errorHandler } from './middlewares/errorHandler.js';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
+import path from 'path';
 
 const PORT = Number(env('PORT', '3000'));
 
-
 const swaggerDocument = YAML.load(
-  `${process.cwd()}/docs/openapi.yaml`
+  `${process.cwd()}/openapi.yaml`
 );
 
 export const setupServer = () => {
-const app = express();
+  const app = express();
 
-  // 1. Standart Middleware'ler
- app.use(express.json());
-app.use(cors());
+  // 1. Standart Middleware'ler
+  app.use(express.json());
+  app.use(cors());
 
+  app.use(
+    pino({
+      transport: {
+        target: 'pino-pretty',
+      },
+    })
+  );
 
+  // 🔴 ÇOK KRİTİK: swagger static SERVE
+  app.use(
+    '/api-docs/swagger',
+    express.static(path.join(process.cwd(), 'swagger'))
+  );
 
-  app.use(
-    pino({
-      transport: {
-        target: 'pino-pretty',
-      },
-    })
-  );
+  app.use('/auth', authRouter);
 
-app.use('/auth', authRouter);
+  // Health check
+  app.get('/', (req, res) => {
+    res.json({ message: 'Hello World!' });
+  });
 
-  // 2. Sağlık Kontrolü (Health Check)
-  app.get('/', (req, res) => {
-    res.json({ message: 'Hello World!' });
-  });
+  // API routes
+  app.use('/contacts', contactsRouter);
 
-  // 3. ROTALAR
+  // Swagger UI
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerDocument)
+  );
 
+  // 404
+  app.use(notFoundHandler);
 
+  // Global error
+  app.use(errorHandler);
 
-  app.use('/contacts', contactsRouter); 
-
-app.use(
-  '/api-docs',
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerDocument)
-);
-
-  // 4. 404 Not Found Handler (Tüm rotalardan sonra)
-  // Adım 2.3: Var olmayan yolları yakalar
-  app.use(notFoundHandler); 
-
-  // 5. GLOBAL Error Handler (En sonda, 4 argümanlı)
-  // Adım 2.2: Hataları standart formata dönüştürür (500, 404, vb.)
-  app.use(errorHandler);
-
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
 };
