@@ -1,65 +1,67 @@
+// src/server.js
+
 import express from 'express';
 import cors from 'cors';
 import pino from 'pino-http';
 import { env } from './utils/env.js';
+import { contactsRouter } from './routes/contacts.js';
+import authRouter from './routes/auth.js';
+import { notFoundHandler } from './middlewares/notFoundHandler.js';
+import { errorHandler } from './middlewares/errorHandler.js';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
+import path from 'path';
 
-// Adım 5 ve Adım 6 için gerekli kontrolcüler
-import { getContactsController, getContactByIdController } from './controllers/contacts.js';
-
-// Ortam değişkenini alın, yoksa 3000 varsayılanını kullanın
 const PORT = Number(env('PORT', '3000'));
+
+const swaggerDocument = YAML.load(
+  `${process.cwd()}/openapi.yaml`
+);
 
 export const setupServer = () => {
   const app = express();
 
-  // CORS ve JSON işleme middleware'leri
+  // 1. Standart Middleware'ler
   app.use(express.json());
   app.use(cors());
 
-  // Pino Logger middleware'i
   app.use(
     pino({
       transport: {
         target: 'pino-pretty',
       },
-    }),
+    })
   );
 
-  // Health Check/Basit Kontrol Rotası
+  // 🔴 ÇOK KRİTİK: swagger static SERVE
+  app.use(
+    '/api-docs/swagger',
+    express.static(path.join(process.cwd(), 'swagger'))
+  );
+
+  app.use('/auth', authRouter);
+
+  // Health check
   app.get('/', (req, res) => {
-    res.json({
-      message: 'Hello World!',
-    });
+    res.json({ message: 'Hello World!' });
   });
 
-  // ********** DİĞER ROTLAR BURAYA EKLENMİŞTİR **********
+  // API routes
+  app.use('/contacts', contactsRouter);
 
-  // Adım 5: Tüm kişileri çekme rotası
-  app.get('/contacts', getContactsController);
+  // Swagger UI
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerDocument)
+  );
 
-  // Adım 6: ID'ye göre bir kişiyi çekme rotası <-- YENİ ROTAYI EKLEDİK
-  app.get('/contacts/:contactId', getContactByIdController);
+  // 404
+  app.use(notFoundHandler);
 
-  // *******************************************************
+  // Global error
+  app.use(errorHandler);
 
-  // 404 Not Found (Bulunamayan Rotalar) İşleyici
-  // Bu middleware, sadece yukarıdaki rotaların hiçbiri eşleşmediğinde çalışır.
-  app.use((req, res, next) => {
-    res.status(404).json({
-      message: 'Not found',
-    });
-  });
-
-  // Hata İşleyici (Error Handler) - Daima en sonda olmalıdır
-  app.use((err, req, res, next) => {
-    console.error(err);
-    res.status(500).json({
-      message: 'Something went wrong',
-      error: err.message,
-    });
-  });
-
-  // Sunucuyu Başlatma
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });

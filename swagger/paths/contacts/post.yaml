@@ -1,0 +1,67 @@
+tags:
+  - Contacts
+
+summary: Create a new contact
+operationId: createContact
+description: Create a new contact for the authorized user.
+
+security:
+  - bearerAuth: []
+
+requestBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        type: object
+        required:
+          - name
+          - email
+        properties:
+          name:
+            type: string
+            example: Ali Veli
+          email:
+            type: string
+            example: ali.veli@example.com
+          phone:
+            type: string
+            example: "5551234567"
+
+responses:
+  '201':
+    description: Contact created successfully
+    content:
+      application/json:
+        example:
+          status: 201
+          message: Contact created
+          data:
+            id: "64f123abc"
+            name: Ali Veli
+            email: ali.veli@example.com
+            phone: "5551234567"
+
+  '400':
+    description: Invalid request data
+    content:
+      application/json:
+        example:
+          status: 400
+          message: Validation error
+
+  '401':
+    description: Unauthorized
+    content:
+      application/json:
+        example:
+          status: 401
+          message: Not authorized
+
+  '500':
+    description: Server error
+    content:
+      application/json:
+        example:
+          status: 500
+          message: Internal server error

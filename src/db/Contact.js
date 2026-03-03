@@ -27,11 +27,17 @@ const contactSchema = new Schema(
       required: true,
       default: 'personal',
     },
+     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     // Modelinize herhangi bir alan eklemediğiniz halde mongoose bunları otomatik ekler:
     // createdAt: Date
     // updatedAt: Date
   },
+ 
   {
+     photo: {
+  type: String,
+  default: null,
+},
     // createdAt ve updatedAt alanlarını otomatik olarak ekler
     timestamps: true,
     // Ödeviniz için, koleksiyon adı 'contacts' olarak ayarlanmalıdır.
